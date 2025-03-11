@@ -82,6 +82,11 @@ const animaster = (function() {
         },
         play(element, cycled) {
             let timeouts = [];
+            const initial = {
+                className: element.className,
+                transform: element.style.transform,
+                transitionDuration: element.style.transitionDuration
+            };
             const steps = this._steps.slice();
             this._steps = [];
             const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0);
@@ -107,6 +112,15 @@ const animaster = (function() {
             return {
                 stop() {
                     timeouts.forEach(id => clearTimeout(id));
+                },
+                reset() {
+                    timeouts.forEach(id => clearTimeout(id));
+                    resetMoveAndScale(element);
+                    if (initial.className.indexOf('hide') !== -1) {
+                        resetFadeIn(element);
+                    } else if (initial.className.indexOf('show') !== -1) {
+                        resetFadeOut(element);
+                    }
                 }
             };
         },
@@ -131,32 +145,19 @@ const animaster = (function() {
             const fadeDuration = duration * 3 / 5;
             this.addMove(moveDuration, { x: 100, y: 20 })
                 .addFadeOut(fadeDuration);
-            const animation = this.play(element);
-            return {
-                reset() {
-                    animation.stop();
-                    resetMoveAndScale(element);
-                    resetFadeOut(element);
-                }
-            };
+            return this.play(element);
         },
         showAndHide(element, duration) {
             const stepDuration = duration / 3;
-            this.addFadeIn(stepDuration)
+            return this.addFadeIn(stepDuration)
                 .addDelay(stepDuration)
                 .addFadeOut(stepDuration)
                 .play(element);
-            return this;
         },
         heartBeating(element) {
             this.addScale(500, 1.4)
                 .addScale(500, 1);
-            const animation = this.play(element, true);
-            return {
-                stop() {
-                    animation.stop();
-                }
-            };
+            return this.play(element, true);
         }
     };
 })();
@@ -192,14 +193,14 @@ function addListeners() {
     document.getElementById('showAndHidePlay')
         .addEventListener('click', function () {
             const block = document.getElementById('showAndHideBlock');
-            animaster.showAndHide(block, 3000);
+            const animation = animaster.showAndHide(block, 3000);
         });
     document.getElementById('heartBeatingPlay')
         .addEventListener('click', function () {
             const block = document.getElementById('heartBeatingBlock');
             const animation = animaster.heartBeating(block);
             document.getElementById('heartBeatingStop')
-                .onclick = () => animation.stop();
+                .onclick = () => animation.reset();
         });
     document.getElementById('customAnimationPlay')
         .addEventListener('click', function () {
