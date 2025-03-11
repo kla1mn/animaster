@@ -1,4 +1,4 @@
-const animaster = (function() {
+let animaster = (function() {
     function resetFadeIn(element) {
         element.classList.remove('show');
         element.classList.add('hide');
@@ -158,10 +158,30 @@ const animaster = (function() {
             this.addScale(500, 1.4)
                 .addScale(500, 1);
             return this.play(element, true);
+        },
+        buildHandler() {
+            const steps = this._steps.slice();
+            this._steps = [];
+            const instance = this;
+            return function() {
+                let timeouts = [];
+                let delay = 0;
+                steps.forEach(step => {
+                    let id = setTimeout(() => {
+                        if (step.operation !== 'delay') {
+                            instance[step.operation](this, step.duration, step.params);
+                        }
+                    }, delay);
+                    timeouts.push(id);
+                    delay += step.duration;
+                });
+            };
         }
     };
 })();
+
 addListeners();
+
 function addListeners() {
     document.getElementById('fadeInPlay')
         .addEventListener('click', function () {
@@ -216,4 +236,12 @@ function addListeners() {
                 .addScale(800, 1)
                 .play(block);
         });
+    document.getElementById('worryAnimationPlay')
+        .addEventListener('click',
+            animaster
+                .addMove(200, {x: 80, y: 0})
+                .addMove(200, {x: 0, y: 0})
+                .addMove(200, {x: 80, y: 0})
+                .addMove(200, {x: 0, y: 0})
+                .buildHandler());
 }
